@@ -662,7 +662,12 @@ public class SerDes {
 		final List<FieldInfo> persistentFields = new ArrayList<>();
 		for (Field f: fields) {
 			int modifiers = f.getModifiers();
-			if (!Modifier.isFinal(modifiers) && !Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers)) {
+			
+			//v1.1: Allow serialization of final fields.
+			//Setting final fields via reflection may give weird results if the
+			//field is a compile-time constant, but if it is, it will never have
+			//a different value anyway, so this is not an issue.
+			if (!Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers)) {
 				
 				//If the field's compile-time type is primitive, it is possible
 				//to omit the runtime object type since the runtime type will
