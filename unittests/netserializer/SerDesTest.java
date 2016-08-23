@@ -206,6 +206,41 @@ class TestClassMap implements Serializable {
 	}
 }
 
+class TestClassFinalField implements Serializable {
+	public final int i1;
+	public final Integer i2;
+	
+	//Compile-time constant
+	public final String str = "abc";
+	
+	public TestClassFinalField() {
+		i1 = 99;
+		i2 = 3;
+	}
+	
+	public TestClassFinalField(int i1, Integer i2) {
+		this.i1 = i1;
+		this.i2 = i2;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (!this.getClass().equals(obj.getClass())) {
+			return false;
+		}
+		TestClassFinalField other = (TestClassFinalField)obj;
+		return (this.i1 == other.i1) && this.i2.equals(other.i2) && this.str.equals(other.str);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Integer.hashCode(i1) + this.i2.hashCode() + str.hashCode();
+	}
+}
+
 public class SerDesTest {
 	
 	private SerDes writer;
@@ -218,7 +253,8 @@ public class SerDesTest {
 				TestClassComposed.class,
 				TestClassBoxedPrimitive.class,
 				TestClassListAndSet.class,
-				TestClassMap.class));
+				TestClassMap.class,
+				TestClassFinalField.class));
 	}
 	
 	@Before
@@ -319,14 +355,31 @@ public class SerDesTest {
 		testWith(null);
 	}
 	
+	/**
+	 * Tests serialization of final fields.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void testFinalFields() throws Exception {
+		String whatItShouldBe = new TestClassFinalField().str;
+		
+		TestClassFinalField obj = (TestClassFinalField)testWith(new TestClassFinalField());
+		assertTrue(obj.str.equals(whatItShouldBe));
+		
+		obj = (TestClassFinalField)testWith(new TestClassFinalField(5, 87));
+		assertTrue(obj.str.equals(whatItShouldBe));
+	}
 	
-	private void testWith(Object obj) throws Exception {
+	
+	private Object testWith(Object obj) throws Exception {
 		Object result = this.serializeAndDeserialize(obj, writer, reader);
 		if (obj != null) {
 			assertTrue(obj.equals(result));
 		} else {
 			assertTrue(result == null);
 		}
+		return result;
 	}
 	
 	private Object serializeAndDeserialize(Object obj, SerDes writer, SerDes reader) throws Exception {
